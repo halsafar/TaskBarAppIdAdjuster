@@ -65,8 +65,21 @@ namespace TaskBarAppIdAdjuster
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void OnOpenLog(object sender, EventArgs e)
-        {            
-            NativeConsole.OpenConsole();
+        {
+            MenuItem item = sender as MenuItem;
+            if (item.Text == "Open Log")
+            {
+                NativeConsole.OpenConsole();
+
+                item.Text = "Close Log";
+            }
+            else
+            {
+                NativeConsole.CloseConsole();
+
+                item.Text = "Open Log";
+            }
+            
         }
 
         /// <summary>
