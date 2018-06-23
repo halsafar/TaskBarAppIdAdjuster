@@ -13,7 +13,7 @@ Some applications group on the task bar when they shouldn't.  Windows doesn't le
 
 ## Install
 
-- Download the latest release here.
+- [Download the latest release](https://github.com/halsafar/TaskBarAppIdAdjuster/releases/latest).
 - Unzip to any location.
 
 ## Usage
