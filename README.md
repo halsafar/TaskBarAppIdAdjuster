@@ -7,6 +7,10 @@ Automatically adjust the Application ID of any Process with a visible TaskBar en
 - Alpha!
 - Working for the basic happy path.
 
+## Reason
+
+Some applications group on the task bar when they shouldn't.  Windows doesn't let you specifically disable grouping for certain applications.  7+ TaskBar Tweaker lets you get most of the way there but it didn't automate the process.
+
 ## Install
 
 - Download the latest release here.
@@ -28,8 +32,7 @@ Automatically adjust the Application ID of any Process with a visible TaskBar en
  
 ## Details
 
-The Windows task bar decides how to group application based on their ApplicationID. This ID comes from the application itself.  The same ID is usually used for each Windows that Application wants to present.  Typically developers of Applications specifically decide whether to set the ID the same for each Window to cause grouping or to give it a unique ID to forcefully ungroup it.  
-
-Using the WindowsCodePack.Shell API we can communicate with the TaskBar. By fetching a list of processes by name we can change the ID on a per process basis for each Window that process has spawned.
+The Windows task bar decides how to group application based on their ApplicationID. This ID usually comes from the application itself.  The developer decides whether to set the ID the same for each Window to cause grouping or to give it a unique ID to forcefully ungroup it.  
+Using the WindowsCodePack.Shell API we can communicate with the TaskBar easily from C#. By fetching a list of processes by name we can change the ID on a per process basis for each Window that process has spawned.
 
 This tool simply wakes up every X seconds, checks to see if any new Windows need to have their IDs adjusted.
