@@ -34,15 +34,7 @@ namespace TaskBarAppIdAdjuster
         private const int STD_OUTPUT_HANDLE = -11;
         private const int MY_CODE_PAGE = 437;
 
-        [DllImport("user32")]
-        static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
 
-        [DllImport("user32")]
-        static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
-
-        const int MF_BYCOMMAND = 0;
-        const int MF_DISABLED = 2;
-        const int SC_CLOSE = 0xF060;
 
         /// <summary>
         /// Open a console window, bind stdout to it.
@@ -62,8 +54,8 @@ namespace TaskBarAppIdAdjuster
 
             // Prevent remove X in window chrome, closing the console this way closes the entire application
             IntPtr consoleHwnd = GetConsoleWindow();
-            var sm = GetSystemMenu(consoleHwnd, false);
-            EnableMenuItem(sm, SC_CLOSE, MF_BYCOMMAND | MF_DISABLED);
+            var sm = NativeWindowHelpers.GetSystemMenu(consoleHwnd, false);
+            NativeWindowHelpers.EnableMenuItem(sm, NativeWindowHelpers.SC_CLOSE, NativeWindowHelpers.MF_BYCOMMAND | NativeWindowHelpers.MF_DISABLED);
 
             Console.WriteLine("Output is now redirected to the console.");
         }
@@ -73,7 +65,8 @@ namespace TaskBarAppIdAdjuster
         /// </summary>
         public static void CloseConsole()
         {
-            FreeConsole();
+            IntPtr consoleHwnd = GetConsoleWindow();
+            NativeWindowHelpers.ShowWindow(consoleHwnd, NativeWindowHelpers.SW_HIDE);
         }
     }
 }

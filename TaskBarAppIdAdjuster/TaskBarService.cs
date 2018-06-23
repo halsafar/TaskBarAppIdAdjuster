@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace TaskBarAppIdAdjuster
 {
-    using TaskEntryTuple = Tuple<String, int>;
+    using TaskEntryTuple = Tuple<String, IntPtr>;
 
     class TaskBarService
     {
@@ -56,7 +56,7 @@ namespace TaskBarAppIdAdjuster
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Console.WriteLine("Failed to load config file, no actions will be taken until the file is fixed...");
                 _settings = null;
@@ -138,40 +138,54 @@ namespace TaskBarAppIdAdjuster
                 Process[] processes = Process.GetProcessesByName(taskSetting.Name);
                 foreach (Process process in processes)
                 {
+                    // Assume if main process has no window then the rest do not?
                     if (process.MainWindowTitle.Length <= 0)
                     {
                         Console.WriteLine("Process matched but has no Window Title, can safely assume no Window, not randomizing: " + process.ProcessName);
                         continue;
                     }
 
-                    var identifier = new TaskEntryTuple(taskSetting.Name, process.Id);
-                    if (_adjustedProcesses.Contains(identifier))
+                    // Iterate over windows
+                    var handles = NativeWindowHelpers.EnumerateProcessThreadWindowHandles(process.Id);
+                    foreach (var handle in handles)
                     {
-                        Console.WriteLine("Process {0}-{1} has already been adjusted.", taskSetting.Name, process.Id);
-                        continue;
-                    }
+                        var identifier = new TaskEntryTuple(taskSetting.Name, handle);
 
-                    // Perform desired action on process
-                    if (taskSetting.Action == TaskAction.Ungroup)
-                    {
-                        Guid g = Guid.NewGuid();
-                        Console.WriteLine("Setting process {0} to random group {1}", process.ProcessName, g.ToString());
-                        TaskbarManager.Instance.SetApplicationIdForSpecificWindow(process.MainWindowHandle, g.ToString());
-                    }
-                    else if (taskSetting.Action == TaskAction.Group)
-                    {
-                        String groupId = "tbAdjusterGroup_" + taskSetting.Name;
-                        Console.WriteLine("Setting process {0} to specific group {1}", process.ProcessName, groupId);
-                        TaskbarManager.Instance.SetApplicationIdForSpecificWindow(process.MainWindowHandle, groupId);
-                    }
+                        bool isWindowVisible = NativeWindowHelpers.IsWindowVisible(handle);
+                        if (!isWindowVisible)
+                        {
+                            // Not visible, do not adjust as when it becomes visible the ID might be forcefully set
+                            continue;
+                        }
 
-                    // Store so we don't try to process it again.
-                    _adjustedProcesses.Add(identifier);
+                        if (_adjustedProcesses.Contains(identifier))
+                        {
+                            Console.WriteLine("Process {0}-{1} has already been adjusted.", taskSetting.Name, process.Id);
+                            continue;
+                        }
+                        
+                        // Perform desired action on process
+                        if (taskSetting.Action == TaskAction.Ungroup)
+                        {
+                            Guid g = Guid.NewGuid();
+                            Console.WriteLine("Setting process {0} to random group {1}", process.ProcessName, g.ToString());
+                            TaskbarManager.Instance.SetApplicationIdForSpecificWindow(handle, g.ToString());
+                        }
+                        else if (taskSetting.Action == TaskAction.Group)
+                        {
+                            String groupId = "tbAdjusterGroup_" + taskSetting.Name;
+                            Console.WriteLine("Setting process {0} to specific group {1}", process.ProcessName, groupId);
+                            TaskbarManager.Instance.SetApplicationIdForSpecificWindow(handle, groupId);
+                        }
+
+                        // Store so we don't try to process it again.
+                        _adjustedProcesses.Add(identifier);
+                    }
                 }
             }
 
             // keep the list trim, remove dead processes
-            _adjustedProcesses.RemoveWhere(delegate (TaskEntryTuple taskEntry) {
+            /*_adjustedProcesses.RemoveWhere(delegate (TaskEntryTuple taskEntry) {
                 try
                 {
                     Process idPid = Process.GetProcessById(taskEntry.Item2);
@@ -181,12 +195,12 @@ namespace TaskBarAppIdAdjuster
                     }
                     return true;
                 }
-                catch (System.ArgumentException e)
+                catch (System.ArgumentException)
                 {
                     // Means the ID is invalid, so it is not running
                     return true;
                 }
-            });      
+            });  */    
             
         }
     }
