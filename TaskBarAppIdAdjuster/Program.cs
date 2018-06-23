@@ -16,6 +16,8 @@ namespace TaskBarAppIdAdjuster
         /// </summary>
         public TaskBarAppIdApplicationContext()
         {
+            Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
+
             // Blank form, not intended for use, just instantiate so we can get the icon for now
             _form = new Form1();
 
@@ -32,7 +34,7 @@ namespace TaskBarAppIdAdjuster
                     new MenuItem("Exit", OnExit)                    
                 }),
                 Visible = true
-            };
+            };            
         }
 
         /// <summary>
@@ -74,15 +76,27 @@ namespace TaskBarAppIdAdjuster
         /// <param name="e"></param>
         void OnExit(object sender, EventArgs e)
         {
-            // Hide tray icon
+            Application.Exit();
+        }
+
+        /// <summary>
+        /// Handle Application Exit.  Gracefully shutdown as best we can.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void OnApplicationExit(object sender, EventArgs e)
+        {
+            if (_taskBarService != null)
+            {
+                _taskBarService.Stop();
+            }
+
             trayIcon.Visible = false;
 
             if (_form != null)
             {
                 _form.Close();
             }
-
-            Application.Exit();
         }
     }
 

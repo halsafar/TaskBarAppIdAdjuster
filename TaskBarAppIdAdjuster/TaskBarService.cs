@@ -35,23 +35,30 @@ namespace TaskBarAppIdAdjuster
         /// </summary>
         public void RefreshConfig()
         {
-            if (_settings == null)
+            try
             {
-                _settings = Settings.Load();
-                _settingLastWriteTime = File.GetLastWriteTimeUtc(Settings.ConfigPath());
-            }
-            else
-            {
-                DateTime curWriteTime = File.GetLastWriteTimeUtc(Settings.ConfigPath());
-                long sub = (long)(curWriteTime - _settingLastWriteTime).TotalMilliseconds;
-                if (sub > 0)
+                if (_settings == null)
                 {
-                    Console.WriteLine("Detected change to settings file...");
                     _settings = Settings.Load();
-                    _settingLastWriteTime = curWriteTime;
+                    _settingLastWriteTime = File.GetLastWriteTimeUtc(Settings.ConfigPath());
+                }
+                else
+                {
+                    DateTime curWriteTime = File.GetLastWriteTimeUtc(Settings.ConfigPath());
+                    long sub = (long)(curWriteTime - _settingLastWriteTime).TotalMilliseconds;
+                    if (sub > 0)
+                    {
+                        Console.WriteLine("Detected change to settings file...");
+                        _settings = Settings.Load();
+                        _settingLastWriteTime = curWriteTime;
+                    }
                 }
             }
-            
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to load config file, no actions will be taken until the file is fixed...");
+                _settings = null;
+            }
         }
 
         /// <summary>
@@ -117,6 +124,11 @@ namespace TaskBarAppIdAdjuster
         /// </summary>
         private void HandleProcesses()
         {
+            if (_settings == null)
+            {
+                return;
+            }
+
             foreach (TaskSetting taskSetting in _settings.ApplicationsToRandomize)
             {
                 Console.WriteLine("Searching for any process matching the name: {0}", taskSetting.Name);
