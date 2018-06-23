@@ -3,6 +3,7 @@ using Microsoft.WindowsAPICodePack.Taskbar;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 
 
@@ -20,12 +21,38 @@ namespace TaskBarAppIdAdjuster
 
         private HashSet<Tuple<String, int>> _adjustedProcesses = new HashSet<Tuple<String, int>>();
 
+        private DateTime _settingLastWriteTime;
+
         /// <summary>
         /// Constructor
         /// </summary>
         public TaskBarService()
         {
+            RefreshConfig();
+        }
 
+        /// <summary>
+        /// Check if we need to refresh the settings.
+        /// </summary>
+        public void RefreshConfig()
+        {
+            if (_settings == null)
+            {
+                _settings = Settings.Load();
+                _settingLastWriteTime = File.GetLastWriteTimeUtc(Settings.ConfigPath());
+            }
+            else
+            {
+                DateTime curWriteTime = File.GetLastWriteTimeUtc(Settings.ConfigPath());
+                long sub = (long)(curWriteTime - _settingLastWriteTime).TotalMilliseconds;
+                if (sub > 0)
+                {
+                    Console.WriteLine("Detected change to settings file...");
+                    _settings = Settings.Load();
+                    _settingLastWriteTime = curWriteTime;
+                }
+            }
+            
         }
 
         /// <summary>
@@ -38,8 +65,6 @@ namespace TaskBarAppIdAdjuster
                 Console.WriteLine("Already running.");
                 return;
             }
-
-            _settings = Settings.Load();
 
             _thread = new Thread(() =>
             {
@@ -81,6 +106,7 @@ namespace TaskBarAppIdAdjuster
             while (this._running)
             {
                 Thread.Sleep(SLEEP_TIME);
+                RefreshConfig();
                 HandleProcesses();
             }
 
@@ -92,11 +118,11 @@ namespace TaskBarAppIdAdjuster
         /// </summary>
         private void HandleProcesses()
         {
-            foreach (String processName in _settings.ApplicationsToRandomize)
+            foreach (TaskSetting taskSetting in _settings.ApplicationsToRandomize)
             {
-                Console.WriteLine("Searching for any process matching the name: {0}", processName);
+                Console.WriteLine("Searching for any process matching the name: {0}", taskSetting.Name);
 
-                Process[] processes = Process.GetProcessesByName(processName);
+                Process[] processes = Process.GetProcessesByName(taskSetting.Name);
                 foreach (Process process in processes)
                 {
                     if (process.MainWindowTitle.Length <= 0)
@@ -105,16 +131,25 @@ namespace TaskBarAppIdAdjuster
                         continue;
                     }
 
-                    var identifier = new Tuple<String, int>(processName, process.Id);
+                    var identifier = new Tuple<String, int>(taskSetting.Name, process.Id);
                     if (_adjustedProcesses.Contains(identifier))
                     {
-                        Console.WriteLine("Process {0}-{1} has already been adjusted.", processName, process.Id);
+                        Console.WriteLine("Process {0}-{1} has already been adjusted.", taskSetting.Name, process.Id);
                         continue;
                     }
 
-                    Console.WriteLine("Setting process {0} to random group", process.ProcessName);
-                    TaskbarManager.Instance.SetApplicationIdForSpecificWindow(process.MainWindowHandle, Guid.NewGuid().ToString());
+                    // Perform desired action on process
+                    if (taskSetting.Action == TaskAction.Ungroup)
+                    {
+                        Console.WriteLine("Setting process {0} to random group", process.ProcessName);
+                        TaskbarManager.Instance.SetApplicationIdForSpecificWindow(process.MainWindowHandle, Guid.NewGuid().ToString());
+                    }
+                    else if (taskSetting.Action == TaskAction.Group)
+                    {
+                        Console.WriteLine("Not supported yet...");
+                    }
 
+                    // Store so we don't try to process it again.
                     _adjustedProcesses.Add(identifier);
                 }
             }
