@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace TaskBarAppIdAdjuster
 {
@@ -55,8 +52,7 @@ namespace TaskBarAppIdAdjuster
         public void Save()
         {
             FileStream stream = new FileStream(Settings.ConfigPath(), FileMode.Create, FileAccess.Write);
-            DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Settings));
-            ser.WriteObject(stream, this);
+            Settings.Serialize(this, stream);
             stream.Close();
         }
 
@@ -69,6 +65,7 @@ namespace TaskBarAppIdAdjuster
             Settings retVal = null;
             if (!File.Exists(Settings.ConfigPath()))
             {
+                // Assume first run, create a default config file to serve as an example
                 TaskSetting notePadDefault = new TaskSetting();
                 notePadDefault.Name = "notepad";
                 notePadDefault.Action = TaskAction.Ungroup;
@@ -81,8 +78,7 @@ namespace TaskBarAppIdAdjuster
             else
             {
                 FileStream stream = new FileStream(Settings.ConfigPath(), FileMode.Open, FileAccess.Read);
-                DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Settings));
-                retVal = ser.ReadObject(stream) as Settings;
+                retVal = Settings.Deserialize(stream);
                 stream.Close();
             }
 
@@ -96,6 +92,41 @@ namespace TaskBarAppIdAdjuster
         public static String ConfigPath()
         {
             return Path.Combine(Environment.CurrentDirectory, "config.json");
+        }
+
+        /// <summary>
+        /// Serialize this class to Json into a Stream.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="s"></param>
+        public static void Serialize(object value, Stream s)
+        {
+            using (StreamWriter writer = new StreamWriter(s))
+            using (JsonTextWriter jsonWriter = new JsonTextWriter(writer))
+            {
+                jsonWriter.Formatting = Formatting.Indented;
+                jsonWriter.IndentChar = ' ';
+                jsonWriter.Indentation = 4;
+
+                JsonSerializer ser = new JsonSerializer();
+                ser.Serialize(jsonWriter, value);
+                jsonWriter.Flush();
+            }
+        }
+
+        /// <summary>
+        /// Unserialize this class from a stream containing JSON
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static Settings Deserialize(Stream s)
+        {
+            using (StreamReader reader = new StreamReader(s))
+            using (JsonTextReader jsonReader = new JsonTextReader(reader))
+            {
+                JsonSerializer ser = new JsonSerializer();
+                return ser.Deserialize<Settings>(jsonReader);
+            }
         }
     }
 }
