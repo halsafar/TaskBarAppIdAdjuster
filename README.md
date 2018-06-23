@@ -1,6 +1,6 @@
 # TaskBar AppID Adjuster
 
-Automatically adjust the Application ID of any Process with a visible TaskBar entry.  Which processes to adjust and what action to take is configurable.
+Automatically adjust the Application ID of any Process with a visible TaskBar entry.  Which processes to adjust and what action to take is configurable.  This software runs in the background and continues to watch the task bar to update any new windows that match a configuration. 
 
 ## Status
 
@@ -36,3 +36,4 @@ The Windows task bar decides how to group application based on their Application
 Using the WindowsCodePack.Shell API we can communicate with the TaskBar easily from C#. By fetching a list of processes by name we can change the ID on a per process basis for each Window that process has spawned.
 
 This tool simply wakes up every X seconds, checks to see if any new Windows need to have their IDs adjusted.
+
