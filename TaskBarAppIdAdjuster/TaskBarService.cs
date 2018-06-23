@@ -164,26 +164,6 @@ namespace TaskBarAppIdAdjuster
                     _adjustedProcesses.Add(identifier);
                 }
             }
-
-
-            /*Process[] processes = Process.GetProcesses();
-            foreach (Process process in processes)
-            {
-                // If it has a window title it must be on a taskbar somewhere.
-                if (process.MainWindowTitle.Length > 0)
-                {
-                    Console.WriteLine("Process: " + process.ProcessName);
-                }
-
-                process.Id
-
-                if (_settings.ApplicationsToRandomize.Contains(process.ProcessName))
-                {
-                    Console.WriteLine("Setting to random group");
-                    
-                    TaskbarManager.Instance.SetApplicationIdForSpecificWindow(process.MainWindowHandle, Guid.NewGuid().ToString());
-                }
-            }*/
         }
     }
 }
