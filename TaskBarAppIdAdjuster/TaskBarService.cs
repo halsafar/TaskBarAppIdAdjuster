@@ -135,7 +135,26 @@ namespace TaskBarAppIdAdjuster
             {
                 Console.WriteLine("Searching for any process matching the name: {0}", taskSetting.Name);
 
-                Process[] processes = Process.GetProcessesByName(taskSetting.Name);
+                List<Process> processes = new List<Process>();
+
+                // support older configs where Name == Rules[0]
+                if (taskSetting.Rules == null && !String.IsNullOrEmpty(taskSetting.Name))
+                {
+                    processes.AddRange(Process.GetProcessesByName(taskSetting.Name));
+                }
+                else if (taskSetting.Rules.Count > 0)
+                {
+                    foreach (string rule in taskSetting.Rules)
+                    {
+                        processes.AddRange(Process.GetProcessesByName(rule));
+                    }
+                }
+                else
+                {
+                    // invalid rule, don't log spam
+                    return;
+                }
+                
                 foreach (Process process in processes)
                 {
                     // Assume if main process has no window then the rest do not?
