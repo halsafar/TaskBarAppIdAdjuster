@@ -25,6 +25,9 @@ namespace TaskBarAppIdAdjuster
         public String Name;
 
         [DataMember]
+        public List<String> Rules;
+
+        [DataMember]
         public TaskAction Action = default(TaskAction);
     }
 
@@ -68,6 +71,7 @@ namespace TaskBarAppIdAdjuster
                 // Assume first run, create a default config file to serve as an example
                 TaskSetting notePadDefault = new TaskSetting();
                 notePadDefault.Name = "notepad";
+                notePadDefault.Rules = new List<string>() { "notepad" };
                 notePadDefault.Action = TaskAction.Ungroup;
 
                 retVal = new Settings();
