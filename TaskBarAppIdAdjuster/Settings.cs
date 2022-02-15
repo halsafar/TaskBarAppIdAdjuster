@@ -41,6 +41,9 @@ namespace TaskBarAppIdAdjuster
         [DataMember]
         public List<TaskSetting> ApplicationsToRandomize = default(List<TaskSetting>);
 
+        [DataMember]
+        public bool AutoStart = false;
+
         /// <summary>
         /// Constructor.
         /// </summary>
