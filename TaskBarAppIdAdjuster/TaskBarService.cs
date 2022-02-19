@@ -24,6 +24,11 @@ namespace TaskBarAppIdAdjuster
 
         private DateTime _settingLastWriteTime;
 
+        public Settings Settings
+        {
+            get { return _settings; }
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>

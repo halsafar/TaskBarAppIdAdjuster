@@ -24,17 +24,40 @@ namespace TaskBarAppIdAdjuster
             // Init the task bar watcher service
             _taskBarService = new TaskBarService();
 
+            // Gather defaults if we have valid settings
+            bool autoStartEnabled = false;
+            if (_taskBarService.Settings != null)
+            {
+                autoStartEnabled = _taskBarService.Settings.AutoStart;
+            }
+
+            // Create menu items
+            MenuItem startStopMenu = new MenuItem(autoStartEnabled ? "Stop" : "Start", OnStart);
+
+            MenuItem autoStartMenu = new MenuItem("Auto Start on Launch", OnToggleAutoStart);
+            autoStartMenu.Checked = autoStartEnabled;
+
+            MenuItem openLogMenu = new MenuItem("Open Log", OnOpenLog);
+
+            MenuItem exitMenu = new MenuItem("Exit", OnExit);
+
             // Initialize Tray Icon
             trayIcon = new NotifyIcon()
             {
                 Icon = _form.Icon,
                 ContextMenu = new ContextMenu(new MenuItem[] {
-                    new MenuItem("Start", OnStart),
-                    new MenuItem("Open Log", OnOpenLog),
-                    new MenuItem("Exit", OnExit)                    
+                    startStopMenu,
+                    autoStartMenu,
+                    openLogMenu,
+                    exitMenu
                 }),
                 Visible = true
-            };            
+            };
+
+            if (autoStartEnabled)
+            {
+                _taskBarService.Start();
+            }
         }
 
         /// <summary>
@@ -48,7 +71,6 @@ namespace TaskBarAppIdAdjuster
             if (item.Text == "Start")
             {                
                 _taskBarService.Start();
-
                 item.Text = "Stop";
             }
             else
@@ -56,7 +78,16 @@ namespace TaskBarAppIdAdjuster
                 _taskBarService.Stop();
                 item.Text = "Start";
             }
+        }
 
+        void OnToggleAutoStart(object sender, EventArgs e)
+        {
+            MenuItem item = sender as MenuItem;
+
+            _taskBarService.Settings.AutoStart = !_taskBarService.Settings.AutoStart;
+            _taskBarService.Settings.Save();
+
+            item.Checked = _taskBarService.Settings.AutoStart;
         }
 
         /// <summary>
