@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace TaskBarAppIdAdjuster
@@ -10,6 +11,8 @@ namespace TaskBarAppIdAdjuster
         private TaskBarService _taskBarService = null;
 
         private Form1 _form = null;
+
+        private Process _logViewerProcess = null;
 
         /// <summary>
         /// Constructor
@@ -98,19 +101,7 @@ namespace TaskBarAppIdAdjuster
         void OnOpenLog(object sender, EventArgs e)
         {
             MenuItem item = sender as MenuItem;
-            if (item.Text == "Open Log")
-            {
-                NativeConsole.OpenConsole();
-
-                item.Text = "Close Log";
-            }
-            else
-            {
-                NativeConsole.CloseConsole();
-
-                item.Text = "Open Log";
-            }
-            
+            _logViewerProcess = Process.Start(@"TaskBarAppIdAdjuster.log");
         }
 
         /// <summary>

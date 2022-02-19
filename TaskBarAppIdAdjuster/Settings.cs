@@ -44,6 +44,9 @@ namespace TaskBarAppIdAdjuster
         [DataMember]
         public bool AutoStart = false;
 
+        [DataMember]
+        public bool verboseLogging = false;
+
         /// <summary>
         /// Constructor.
         /// </summary>

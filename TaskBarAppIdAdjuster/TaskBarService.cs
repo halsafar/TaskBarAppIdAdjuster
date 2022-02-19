@@ -1,4 +1,6 @@
-﻿using Microsoft.WindowsAPICodePack.Taskbar;
+﻿using log4net;
+using log4net.Core;
+using Microsoft.WindowsAPICodePack.Taskbar;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,6 +31,8 @@ namespace TaskBarAppIdAdjuster
             get { return _settings; }
         }
 
+        private static readonly ILog log = LogManager.GetLogger(typeof(TaskBarAppIdApplicationContext));
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -48,6 +52,16 @@ namespace TaskBarAppIdAdjuster
                 {
                     _settings = Settings.Load();
                     _settingLastWriteTime = File.GetLastWriteTimeUtc(Settings.ConfigPath());
+
+                    // adjust log level
+                    if (_settings.verboseLogging)
+                    {
+                        foreach (var r in LogManager.GetAllRepositories())
+                        {
+                            ((log4net.Repository.Hierarchy.Hierarchy)r).Root.Level = Level.Debug;
+                            ((log4net.Repository.Hierarchy.Hierarchy)r).RaiseConfigurationChanged(EventArgs.Empty);
+                        }
+                    }
                 }
                 else
                 {
@@ -55,7 +69,7 @@ namespace TaskBarAppIdAdjuster
                     long sub = (long)(curWriteTime - _settingLastWriteTime).TotalMilliseconds;
                     if (sub > 0)
                     {
-                        Console.WriteLine("Detected change to settings file...");
+                        log.Info("Detected change to settings file...");
                         _settings = Settings.Load();
                         _settingLastWriteTime = curWriteTime;
                     }
@@ -63,7 +77,7 @@ namespace TaskBarAppIdAdjuster
             }
             catch (Exception)
             {
-                Console.WriteLine("Failed to load config file, no actions will be taken until the file is fixed...");
+                log.Error("Failed to load config file, no actions will be taken until the file is fixed...");
                 _settings = null;
             }
         }
@@ -75,7 +89,7 @@ namespace TaskBarAppIdAdjuster
         {
             if (this._running)
             {
-                Console.WriteLine("Already running.");
+                log.Warn("Already running.");
                 return;
             }
 
@@ -94,7 +108,7 @@ namespace TaskBarAppIdAdjuster
         {
             if (_thread == null || !_thread.IsAlive)
             {
-                Console.WriteLine("Thread is already stopped or was never started.");
+                log.Warn("Thread is already stopped or was never started.");
                 return;
             }
 
@@ -116,7 +130,7 @@ namespace TaskBarAppIdAdjuster
             };
 
             HandleProcesses();
-            Console.WriteLine("Watching processes, press Ctrl+C to quit.");
+            log.Info("Starting to watch for processes to match...");
             while (this._running)
             {
                 RefreshConfig();
@@ -128,11 +142,11 @@ namespace TaskBarAppIdAdjuster
                 }
                 catch (ThreadInterruptedException)
                 {
-                    Console.WriteLine("Sleep interrupted!");
+                    log.Debug("Sleep interrupted!");
                 }
             }
 
-            Console.WriteLine("Goodbye");
+            log.Info("Goodbye");
         }
 
         /// <summary>
@@ -147,7 +161,7 @@ namespace TaskBarAppIdAdjuster
 
             foreach (TaskSetting taskSetting in _settings.ApplicationsToRandomize)
             {
-                Console.WriteLine("Searching for any process matching the name: {0}", taskSetting.Name);
+                log.Debug($"Searching for any process matching the name: {taskSetting.Name}");
 
                 List<Process> processes = new List<Process>();
 
@@ -174,7 +188,7 @@ namespace TaskBarAppIdAdjuster
                     // Assume if main process has no window then the rest do not?
                     if (process.MainWindowTitle.Length <= 0)
                     {
-                        Console.WriteLine("Process matched but has no Window Title, can safely assume no Window, not randomizing: " + process.ProcessName);
+                        log.Debug($"Process matched but has no Window Title, can safely assume no Window, not randomizing: {process.ProcessName}");
                         continue;
                     }
 
@@ -193,7 +207,7 @@ namespace TaskBarAppIdAdjuster
 
                         if (_adjustedProcesses.Contains(identifier))
                         {
-                            Console.WriteLine("Process {0}-{1} has already been adjusted.", taskSetting.Name, process.Id);
+                            log.Debug($"Process {taskSetting.Name}-{process.Id} has already been adjusted.");
                             continue;
                         }
                         
@@ -201,13 +215,13 @@ namespace TaskBarAppIdAdjuster
                         if (taskSetting.Action == TaskAction.Ungroup)
                         {
                             Guid g = Guid.NewGuid();
-                            Console.WriteLine("Setting process {0} to random group {1}", process.ProcessName, g.ToString());
+                            log.Debug($"Setting process {process.ProcessName} to random group {g.ToString()}");
                             TaskbarManager.Instance.SetApplicationIdForSpecificWindow(handle, g.ToString());
                         }
                         else if (taskSetting.Action == TaskAction.Group)
                         {
                             String groupId = "tbAdjusterGroup_" + taskSetting.Name;
-                            Console.WriteLine("Setting process {0} to specific group {1}", process.ProcessName, groupId);
+                            log.Debug($"Setting process {process.ProcessName} to specific group {groupId}");
                             TaskbarManager.Instance.SetApplicationIdForSpecificWindow(handle, groupId);
                         }
 
