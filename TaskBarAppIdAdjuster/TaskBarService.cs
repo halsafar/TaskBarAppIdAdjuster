@@ -99,6 +99,7 @@ namespace TaskBarAppIdAdjuster
             }
 
             this._running = false;
+            _thread.Interrupt();
             _thread.Join();
         }
 
@@ -118,9 +119,17 @@ namespace TaskBarAppIdAdjuster
             Console.WriteLine("Watching processes, press Ctrl+C to quit.");
             while (this._running)
             {
-                Thread.Sleep(SLEEP_TIME);
                 RefreshConfig();
                 HandleProcesses();
+
+                try
+                {
+                    Thread.Sleep(SLEEP_TIME);
+                }
+                catch (ThreadInterruptedException)
+                {
+                    Console.WriteLine("Sleep interrupted!");
+                }
             }
 
             Console.WriteLine("Goodbye");
