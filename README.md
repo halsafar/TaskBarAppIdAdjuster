@@ -4,8 +4,7 @@ Automatically adjust the Application ID of any Process with a visible TaskBar en
 
 ## Status
 
-- Alpha!
-- Working for the basic happy path.
+- Working!
 
 ## Reason
 
@@ -17,19 +16,42 @@ Some applications group on the task bar when they shouldn't.  Windows doesn't le
 - Unzip to any location.
 
 ## Usage
+- Edit `config.json`, see [Adding Rules](#adding-rules)
 - Launch TaskBarIdAdjuster.exe
-- On first launch a config file named `config.json` will be created with an example entry.
-- A simple tray icon is the only indication it is running.  No need to clutter the taskbar. 
-- The config file is checked for changes every iteration of the main loop.  You can edit while it is running.
+- Start the matching process or Stop/Exit by accessing the tray-icon.
+- The config file is checked for changes every iteration of the main loop.  
+  - You can edit this file live.  
+  - Errors in the config file will cause it to stop matching anything until the errors are addressed.
 
-### Basic Steps
+### Adding Rules
 * Open config.json
 * Use the default `notepad` entry as inspiration.
-* Name: Add the basename of the process without extension.  So `C:\Foo\Bar.exe` becomes `Bar`
+* Name: Name of this rule group, unused.
+* Rules: Array of process names to match. Add the basename of the process without extension.  So `C:\Foo\Bar.exe` becomes `Bar`
 * Action:
-  * 0 = Ungroup, this will forcefully ungroup on the taskbar any apps that match the process name.
-  * 1 = Group, currently unsupported.
- 
+  * 0 = Ungroup, this will ungroup applications on the taskbar that match the process name.
+  * 1 = Group, this will group applications on the taskbar that match the process name.
+
+Example multiple rules, splitting up notepad and vscode:
+```
+"ApplicationsToRandomize": [
+    {
+        "Name": "notepad",
+        "Rules": [
+            "notepad"
+        ],
+        "Action": 0
+    },
+    {
+        "Name": "vscode",
+        "Rules": [
+            "vscode"
+        ],
+        "Action": 0
+    }    
+],
+```
+
 ## Details
 
 The Windows task bar decides how to group application based on their ApplicationID. This ID usually comes from the application itself.  The developer decides whether to set the ID the same for each Window to cause grouping or to give it a unique ID to forcefully ungroup it.  
